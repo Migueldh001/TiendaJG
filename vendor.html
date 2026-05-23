@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#1a3a5c">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="robots" content="noindex, nofollow">
+
+    <title>Panel Vendedor - Virtual JG</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/home.css">
+    <link rel="stylesheet" href="css/product.css">
+    <link rel="stylesheet" href="css/cart.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/vendor.css">
+    <link rel="stylesheet" href="css/modals.css">
+    <link rel="stylesheet" href="css/dark-mode.css">
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        .vendor-page-wrapper {
+            min-height: 100vh;
+            background: var(--bg-primary);
+            padding-top: var(--header-height);
+        }
+
+        .vendor-page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-6);
+        }
+
+        .vendor-tabs-wrapper {
+            position: sticky;
+            top: var(--header-height);
+            z-index: var(--z-sticky);
+            background: var(--bg-primary);
+            padding: var(--space-3) 0;
+            margin-bottom: var(--space-4);
+        }
+    </style>
+</head>
+
+<body data-page="vendor">
+    <!-- LIMPIEZA INTELIGENTE (solo una vez) -->
+    <script>
+    (function() {
+        window.scrollTo(0, 0);
+
+        // Solo limpiar caché si es la primera vez en esta versión
+        var APP_VERSION = '1.1.0';
+        var lastVersion = localStorage.getItem('vjg_app_version');
+
+        if (lastVersion !== APP_VERSION) {
+            console.log('Nueva versión detectada, limpiando caché...');
+
+            // Desregistrar SW viejos
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    registrations.forEach(function(reg) { reg.unregister(); });
+                });
+            }
+
+            // Limpiar caches
+            if ('caches' in window) {
+                caches.keys().then(function(keys) {
+                    keys.forEach(function(key) { caches.delete(key); });
+                });
+            }
+
+            localStorage.setItem('vjg_app_version', APP_VERSION);
+
+            // Recargar una sola vez después de limpiar
+            if (!sessionStorage.getItem('vjg_reloaded')) {
+                sessionStorage.setItem('vjg_reloaded', '1');
+                setTimeout(function() {
+                    window.location.reload();
+                }, 500);
+                return;
+            }
+        }
+
+        // Limpiar la bandera de recarga
+        sessionStorage.removeItem('vjg_reloaded');
+
+        // Seguridad: quitar splash después de 6 segundos
+        setTimeout(function() {
+            var splash = document.getElementById('app-splash');
+            if (splash) {
+                splash.style.display = 'none';
+                try { splash.remove(); } catch(e) {}
+            }
+            window.scrollTo(0, 0);
+        }, 6000);
+    })();
+    </script>
+     <!-- SPLASH SCREEN -->
+    <div id="app-splash" style="
+        position:fixed;inset:0;
+        background:rgba(10,18,36,0.5);
+        backdrop-filter:blur(16px);
+        -webkit-backdrop-filter:blur(16px);
+        display:flex;align-items:center;justify-content:center;
+        z-index:99999;transition:all 0.5s ease">
+        <div style="
+            background:linear-gradient(145deg,rgba(255,255,255,0.97),rgba(248,250,252,0.97));
+            border-radius:28px;
+            padding:48px 56px;
+            display:flex;flex-direction:column;align-items:center;
+            gap:14px;
+            box-shadow:0 32px 100px rgba(0,0,0,0.25),0 0 0 1px rgba(255,255,255,0.8);
+            max-width:360px;width:92%;text-align:center;
+            border:1px solid rgba(255,255,255,0.6)">
+
+            <div style="font-size:16px;color:#94a3b8;font-weight:600;letter-spacing:1px;
+                        text-transform:uppercase">
+                Bienvenido a
+            </div>
+
+            <img src="assets/iso.png" alt="Virtual JG"
+                 style="height:88px;width:auto;margin:6px 0;
+                        filter:drop-shadow(0 4px 12px rgba(26,58,92,0.2))"
+                 onerror="this.outerHTML='<div style=\'font-size:32px;font-weight:800;color:#1a3a5c;margin:10px 0\'>Virtual JG</div>'">
+
+            <div style="position:relative;width:76px;height:76px;margin:12px 0 6px">
+                <svg width="76" height="76" viewBox="0 0 76 76" style="transform:rotate(-90deg)">
+                    <circle cx="38" cy="38" r="33" fill="none" stroke="#e2e8f0" stroke-width="5"/>
+                    <circle cx="38" cy="38" r="33" fill="none"
+                            stroke="url(#splash-gradient)" stroke-width="5"
+                            stroke-dasharray="207" stroke-dashoffset="207" stroke-linecap="round"
+                            id="splash-progress-circle"
+                            style="transition:stroke-dashoffset 0.4s ease"/>
+                    <defs>
+                        <linearGradient id="splash-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#1a3a5c"/>
+                            <stop offset="100%" style="stop-color:#f97316"/>
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <div id="splash-percent" style="
+                    position:absolute;inset:0;display:flex;
+                    align-items:center;justify-content:center;
+                    font-size:17px;font-weight:800;
+                    background:linear-gradient(135deg,#1a3a5c,#f97316);
+                    -webkit-background-clip:text;
+                    -webkit-text-fill-color:transparent;
+                    background-clip:text">
+                    0%
+                </div>
+            </div>
+
+            <div id="splash-status" style="
+                font-size:14px;color:#64748b;font-weight:500;
+                min-height:22px;transition:opacity 0.3s">
+                Iniciando...
+            </div>
+
+            <div style="display:flex;gap:4px;margin-top:4px">
+                <div style="width:6px;height:6px;border-radius:50%;background:#1a3a5c;animation:pulse 1.5s infinite"></div>
+                <div style="width:6px;height:6px;border-radius:50%;background:#f97316;animation:pulse 1.5s infinite 0.3s"></div>
+                <div style="width:6px;height:6px;border-radius:50%;background:#1a3a5c;animation:pulse 1.5s infinite 0.6s"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="header" id="main-header"></header>
+
+    <!-- WRAPPER VENDOR -->
+    <div class="vendor-page-wrapper">
+        <div class="vendor-page-container">
+
+            <!-- Header del panel -->
+            <div class="vendor-header">
+                <div class="vendor-header-left">
+
+                    <!-- Botón volver -->
+                    <button class="admin-back-btn"
+                            onclick="window.location.href='index.html'"
+                            title="Volver a la tienda">←</button>
+
+                    <!-- Avatar + info -->
+                    <div class="vendor-avatar" id="vendor-avatar">V</div>
+
+                    <div class="vendor-title-info">
+                        <span class="vendor-welcome">Bienvenido,</span>
+                        <span class="vendor-name" id="vendor-display-name">
+                            Vendedor
+                        </span>
+                        <span class="vendor-role-badge" id="vendor-role-label">
+                            🛍️ Vendedor
+                        </span>
+                    </div>
+
+                </div>
+
+                <div class="vendor-header-actions">
+                    <button class="btn btn-outline btn-sm"
+                            onclick="App.toggleTheme()">
+                        🌙 Tema
+                    </button>
+                    <button class="btn btn-ghost btn-sm"
+                            onclick="Auth.logout()">
+                        🚪 Salir
+                    </button>
+                </div>
+            </div>
+
+            <!-- STATS RÁPIDAS -->
+            <div class="vendor-stats" style="margin-bottom:var(--space-6)">
+
+                <div class="vendor-stat-card">
+                    <div class="vendor-stat-icon">📦</div>
+                    <div class="vendor-stat-label">Total Productos</div>
+                    <div class="vendor-stat-value" id="stat-total-products">—</div>
+                    <div class="vendor-stat-sub">productos creados</div>
+                </div>
+
+                <div class="vendor-stat-card">
+                    <div class="vendor-stat-icon">✅</div>
+                    <div class="vendor-stat-label">Activos</div>
+                    <div class="vendor-stat-value" id="stat-active-products">—</div>
+                    <div class="vendor-stat-sub">publicados</div>
+                </div>
+
+                <div class="vendor-stat-card">
+                    <div class="vendor-stat-icon">🛒</div>
+                    <div class="vendor-stat-label">Total Ventas</div>
+                    <div class="vendor-stat-value" id="stat-total-sales">—</div>
+                    <div class="vendor-stat-sub">unidades vendidas</div>
+                </div>
+
+                <div class="vendor-stat-card">
+                    <div class="vendor-stat-icon">💰</div>
+                    <div class="vendor-stat-label">Ingresos</div>
+                    <div class="vendor-stat-value" id="stat-total-revenue">—</div>
+                    <div class="vendor-stat-sub">en USD</div>
+                </div>
+
+                <div class="vendor-stat-card">
+                    <div class="vendor-stat-icon">⭐</div>
+                    <div class="vendor-stat-label">Rating Promedio</div>
+                    <div class="vendor-stat-value" id="stat-avg-rating">—</div>
+                    <div class="vendor-stat-sub">de 5 estrellas</div>
+                </div>
+
+            </div>
+
+            <!-- TABS -->
+            <div class="vendor-tabs-wrapper">
+                <div class="vendor-tabs">
+
+                    <button class="vendor-tab active"
+                            data-tab="products"
+                            onclick="VendorPanel.switchTab('products')">
+                        <span class="vendor-tab-icon">📦</span>
+                        Mis Productos
+                    </button>
+
+                    <button class="vendor-tab"
+                            data-tab="stats"
+                            onclick="VendorPanel.switchTab('stats')">
+                        <span class="vendor-tab-icon">📊</span>
+                        Estadísticas
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- PANELES -->
+            <div class="vendor-panels">
+
+                <!-- Panel: Productos -->
+                <div class="vendor-panel active"
+                     id="vendor-panel-products">
+                    <div class="empty-state">
+                        <div class="spinner spinner-lg"></div>
+                        <p>Cargando productos...</p>
+                    </div>
+                </div>
+
+                <!-- Panel: Estadísticas -->
+                <div class="vendor-panel"
+                     id="vendor-panel-stats">
+                    <div class="empty-state">
+                        <div class="spinner spinner-lg"></div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- /vendor-panels -->
+
+            <div style="height:var(--space-16)"></div>
+
+        </div>
+    </div>
+    <!-- /vendor-page-wrapper -->
+
+    <!-- Modal producto -->
+    <div class="product-modal-overlay" id="product-modal-overlay">
+        <div class="product-modal">
+            <button class="product-modal-close"
+                    onclick="ProductsManager.closeProductModal()">✕</button>
+            <div class="product-modal-content"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/currency.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/filters.js"></script>
+    <script src="js/reviews.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/pwa.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/vendor.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const checkAuth = setInterval(async () => {
+
+            if (Auth._initialized) {
+                clearInterval(checkAuth);
+
+                // Verificar login
+                if (!Auth.isLoggedIn()) {
+                    VJG.UI.toast('Debes iniciar sesión', 'warning');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                    return;
+                }
+
+                // Verificar rol
+                const role = Auth.getProfile()?.role;
+                if (!['admin', 'vendor'].includes(role)) {
+                    VJG.UI.toast('No tienes permisos de vendedor', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                    return;
+                }
+
+                // Inicializar panel vendor
+                await VendorPanel.init();
+            }
+
+        }, 200);
+
+        // Timeout seguridad
+        setTimeout(() => {
+            clearInterval(checkAuth);
+        }, 10000);
+    });
+    </script>
+
+</body>
+</html>
